@@ -11,7 +11,7 @@ def get_characters():
             if (
                 character['species'] == 'Human' and
                 character['status'] == 'Alive' and
-                character['origin']['name'] == 'Earth (C-137)'
+                "Earth" in character['origin']['name']
             ):
                 characters.append({
                     'Name': character['name'],
