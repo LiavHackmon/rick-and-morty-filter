@@ -1,0 +1,73 @@
+Rick and Morty Character Scraper
+This project contains a Python script designed to fetch data from the "Rick and Morty" API and save it into a CSV file.
+
+Project Description
+This script aims to identify and collect information about specific characters from the Rick and Morty universe that meet predefined criteria. The collected data is then neatly organized and saved into a CSV file for easy analysis and viewing.
+
+Features
+The script performs the following operations:
+
+API Query: Connects to the official Rick and Morty API.
+
+Character Filtering: Identifies characters that meet these conditions:
+
+Species: "Human"
+
+Status: "Alive"
+
+Origin: "Earth" (This includes variations like "Earth (C-137)", "Earth (Replacement Dimension)", etc., as the script checks for "Earth" within the origin name).
+
+Data Collection: Gathers a list of results including:
+
+Character Name
+
+Current Location
+
+Image Link
+
+CSV Export: Writes the list of results to a CSV file in a readable format.
+
+System Requirements
+Python 3.x
+
+requests library (can be installed via pip install requests)
+
+How to Run the Script
+Follow these steps to execute the script:
+
+Save the Script: Save the provided Python code into a file, for example, rick_and_morty_scraper.py.
+
+Install Dependencies (if not already installed):
+
+pip install requests
+
+Run the Script from the Terminal:
+Navigate to the directory where you saved the file and execute the following command:
+
+python3 rick_and_morty_scraper.py
+
+Script Output
+After running the script, a CSV file named rick_and_morty_humans_from_earth.csv will be created in the same directory from which you executed the script.
+
+The file will contain the matching characters in CSV format, for example:
+
+Name,Location,Image
+Rick Sanchez,Citadel of Ricks,https://rickandmortyapi.com/api/character/avatar/1.jpeg
+Summer Smith,Earth (Replacement Dimension),https://rickandmortyapi.com/api/character/avatar/3.jpeg
+Beth Smith,Earth (Replacement Dimension),https://rickandmortyapi.com/api/character/avatar/4.jpeg
+# ... and more characters
+
+API Used
+This script relies on the Rick and Morty API. The full API documentation is available here:
+https://rickandmortyapi.com/documentation/#rest
+
+Possible Enhancements
+Command-Line Arguments: Allow users to specify filtering criteria (species, status, origin) via command-line arguments.
+
+Location Filtering: Add an option to filter by Location as well, or provide clearer distinction between Origin and Location in the output.
+
+Error Handling & Logging: Implement more robust error handling and detailed logging for troubleshooting.
+
+GUI: Develop a simple graphical user interface for selecting criteria and viewing results.
+
+Authentication: If the API required authentication, implement secure handling of API tokens (e.g., via environment variables or a secrets management system).
