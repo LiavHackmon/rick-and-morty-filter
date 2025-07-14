@@ -1,4 +1,4 @@
-name: Kubernetes CI/CD Pipeline
+name: Deploy and Test Rick and Morty App on kind Kubernetes
 
 on:
   push:
@@ -6,49 +6,73 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
+  deploy-test:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Login to DockerHub
-      uses: docker/login-action@v2
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Install kind
+        run: |
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.20.0/kind-linux-amd64
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
 
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v4
-      with:
-        push: true
-        tags: liavhackmon/rick-morty-app:latest
-        file: task2/Dockerfile
-        context: task2  
+      - name: Create kind cluster
+        run: kind create cluster --wait 60s
 
-    - name: Set up kind (Kubernetes IN Docker) cluster
-      uses: engineerd/setup-kind@v0.5.0
-      with:
-        version: v0.20.0
+      - name: Build Docker image and load into kind
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: task2/Dockerfile         # עדכן כאן לפי הנתיב שלך לדוקרפיל
+          tags: liavhackmon/rick-morty-app:latest
+          load: true
+          push: false
 
-    - name: Load Docker image into kind cluster
-      run: kind load docker-image liavhackmon/rick-morty-app:latest
+      - name: Load Docker image into kind cluster
+        run: kind load docker-image liavhackmon/rick-morty-app:latest
 
-    - name: Deploy Kubernetes manifests
-      run: |
-        kubectl apply -f ./yamls
+      - name: Setup kubectl context to kind cluster
+        run: kubectl cluster-info --context kind-kind
 
-    - name: Wait for deployment rollout
-      run: |
-        kubectl rollout status deployment/rickmorty-deployment --timeout=2m
+      - name: Deploy Helm chart
+        run: helm upgrade --install rickmorty ./task4-helm/rickmorty
 
-    - name: Run healthcheck test
-      run: |
-        kubectl port-forward svc/rickmorty-service 8080:80 &
-        sleep 5
-        curl -f http://localhost:8080/rickmorty/healthcheck
+      - name: Wait for deployment rollout
+        run: kubectl rollout status deployment/rickmorty --timeout=120s
+
+      - name: Port-forward Rick and Morty service for testing
+        run: kubectl port-forward svc/rickmorty-service 5000:80 &
+      
+      - name: Wait for port-forward to be ready
+        run: sleep 10
+
+      - name: Test /healthcheck endpoint
+        run: |
+          RESPONSE=$(curl --write-out '%{http_code}' --silent --output /dev/null http://localhost:5000/rickmorty/healthcheck)
+          if [ "$RESPONSE" != "200" ]; then
+            echo "Healthcheck failed with status $RESPONSE"
+            exit 1
+          else
+            echo "Healthcheck succeeded"
+          fi
+
+      - name: Test /characters endpoint
+        run: |
+          RESPONSE=$(curl --write-out '%{http_code}' --silent --output /dev/null http://localhost:5000/rickmorty/characters)
+          if [ "$RESPONSE" != "200" ]; then
+            echo "/characters endpoint failed with status $RESPONSE"
+            exit 1
+          else
+            echo "/characters endpoint succeeded"
+          fi
+
+      - name: Cleanup kind cluster
+        if: always()
+        run: kind delete cluster
 
