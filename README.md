@@ -66,4 +66,39 @@ docker build -t rick-morty-app .
 Run the container (mapping port 5000):
 docker run --name rickmorty-container -d -p 5000:5000 rick-morty-app
 
+---
 
+## 🚀 Deploying to Kubernetes
+
+### Prerequisites
+
+- A running Kubernetes cluster (e.g., Minikube)
+- `kubectl` CLI configured
+- An Ingress Controller installed (e.g., NGINX Ingress)
+- Docker image `liavhackmon/rick-morty-app:latest` pushed to Docker Hub
+
+---
+
+### Deployment Steps
+
+1. **Start Minikube (if not already running):**
+
+```bash
+minikube start
+
+minikube addons enable ingress
+
+kubectl apply -f task2/yamls/Deployment.yaml
+kubectl apply -f task2/yamls/Service.yaml
+kubectl apply -f task2/yamls/Ingress.yaml
+
+
+minikube tunnel
+
+Access the application in your browser:
+
+Home Page: http://localhost/rickmorty/
+
+Characters Page: http://localhost/rickmorty/characters
+
+Health Check: http://localhost/rickmorty/healthcheck
