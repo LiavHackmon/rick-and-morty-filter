@@ -27,7 +27,8 @@ jobs:
       with:
         push: true
         tags: liavhackmon/rick-morty-app:latest
-        file: ./Dockerfile
+        file: task2/Dockerfile
+        context: task2  
 
     - name: Set up kind (Kubernetes IN Docker) cluster
       uses: engineerd/setup-kind@v0.5.0
