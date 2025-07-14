@@ -102,3 +102,31 @@ Home Page: http://localhost/rickmorty/
 Characters Page: http://localhost/rickmorty/characters
 
 Health Check: http://localhost/rickmorty/healthcheck
+
+---
+
+📦 Helm Chart Deployment (Bonus Task)
+This task demonstrates how the Rick and Morty Flask-based web application was containerized and deployed to a Kubernetes cluster using Helm.
+Created a Helm Chart
+Initialized a Helm chart using helm create rickmorty, which generated a standardized folder structure including Chart.yaml, values.yaml, and a templates/ directory.
+
+Configured values.yaml
+Defined all necessary parameters in values.yaml for a flexible deployment:
+Image repository and tag
+Service type and ports
+Ingress rules for external access via /rickmorty
+Customized Kubernetes Templates
+Updated deployment.yaml, service.yaml, and ingress.yaml to use Helm templating syntax (.Values) for full configurability.
+Cleaned Unused Templates
+Removed unnecessary template files such as hpa.yaml, tests/, and serviceaccount.yaml to keep the chart minimal and focused.
+Validated the Chart
+Ran helm lint . to ensure the chart structure and templates are valid.
+Deployed with Helm
+Deployed the application using:
+helm install rickmorty .
+
+Accessed the application via:
+http://localhost/rickmorty
+
+Easily removed the release using:
+helm uninstall rickmorty
