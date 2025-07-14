@@ -25,7 +25,7 @@ def get_characters():
         page += 1
     return characters
 
-@app.route('/')
+@app.route('/rickmorty/') # This route is correct
 def home():
     return """
     <html>
@@ -51,13 +51,14 @@ def home():
     </head>
     <body>
         <h1>Welcome to the Rick and Morty API Service</h1>
-        <button onclick="window.location.href='/characters'">View Characters</button>
-        <button onclick="window.location.href='/healthcheck'">Health Check</button>
+        <!-- FIX: Update internal links to include /rickmorty/ prefix -->
+        <button onclick="window.location.href='/rickmorty/characters'">View Characters</button>
+        <button onclick="window.location.href='/rickmorty/healthcheck'">Health Check</button>
     </body>
     </html>
     """
 
-@app.route('/characters')
+@app.route('/rickmorty/characters') # This route is correct
 def characters_endpoint():
     characters = get_characters()
 
@@ -133,24 +134,27 @@ def characters_endpoint():
 
     html += """
         </div>
-        <a href="/" class="back-btn">Back to Home</a>
+        <!-- FIX: Update internal link to include /rickmorty/ prefix -->
+        <a href="/rickmorty/" class="back-btn">Back to Home</a>
     </body>
     </html>
     """
     return html
 
-@app.route('/healthcheck')
+@app.route('/rickmorty/healthcheck') # This route is correct
 def healthcheck():
     return """
     <html>
       <body style="font-family: Arial, sans-serif; text-align:center; margin-top:50px; background:#f9f9f9;">
         <h2>Health Check Status</h2>
         <p>Status: <strong>OK</strong></p>
-        <button onclick="location.href='/'" style="padding:12px 25px; font-size:16px; border:none; border-radius:5px; background:#007BFF; color:#fff; cursor:pointer;">Back to Home</button>
+        <!-- FIX: Update internal link to include /rickmorty/ prefix -->
+        <button onclick="location.href='/rickmorty/'" style="padding:12px 25px; font-size:16px; border:none; border-radius:5px; background:#007BFF; color:#fff; cursor:pointer;">Back to Home</button>
       </body>
     </html>
     """
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)
+
 
