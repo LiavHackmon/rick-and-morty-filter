@@ -127,6 +127,6 @@ helm install rickmorty .
 
 Accessed the application via:
 http://localhost/rickmorty
-
+.
 Easily removed the release using:
 helm uninstall rickmorty
