@@ -130,3 +130,21 @@ http://localhost/rickmorty
 .
 Easily removed the release using:
 helm uninstall rickmorty
+
+
+GitHub Actions Workflow Overview
+This repository includes a GitHub Actions workflow that automates the following steps:
+
+Initiate a small Kubernetes cluster using kind directly on the GitHub Actions runner.
+
+Build a Docker image for the Rick and Morty application from the provided Dockerfile.
+
+Deploy the application to the locally created Kubernetes cluster by applying Kubernetes manifests.
+
+Run automated tests by sending HTTP requests to key application endpoints to verify deployment success.
+
+Document the workflow clearly in this README with explanations of the workflow, jobs, and steps involved.
+
+This automation ensures a smooth Continuous Integration and Continuous Deployment (CI/CD) process, validating that the application is built, deployed, and tested on every push to the main branch.
+
+
