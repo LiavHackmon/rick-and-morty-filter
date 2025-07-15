@@ -21,7 +21,7 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          docker build -t liavhackmon/rick-morty-app:latest .
+          docker build -t liavhackmon/rick-morty-app:latest ./task2
           docker push liavhackmon/rick-morty-app:latest
 
       - name: Set up Kind cluster
