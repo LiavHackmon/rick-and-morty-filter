@@ -6,8 +6,9 @@ on:
       - main
 
 jobs:
-  build-test-deploy:
-    runs-on: ubuntu-latest
+  build-push-deploy:
+    runs-on: ubuntu-20.04
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
@@ -15,44 +16,31 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
 
-    - name: Log in to DockerHub
-      uses: docker/login-action@v2
+    - name: Build Docker image (local only)
+      run: docker build -t liavhackmon/rick-morty-app:latest ./task2
+
+    - name: Set up Kubernetes cluster with kind
+      uses: engineerd/setup-kind@v0.6.1
       with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
+        version: v0.20.0
+        wait-for-ready: true
+        name: rickmorty-cluster
 
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v4
-      with:
-        context: ./task2
-        file: ./task2/Dockerfile
-        push: true
-        tags: liavhackmon/rick-morty-app:latest
-
-    - name: Set up KinD cluster
-      uses: helm/kind-action@v1.8.0
-      with:
-        cluster_name: rickmorty-cluster
-
-    - name: Wait for Kubernetes API to be ready
-      run: kubectl cluster-info
-
-    - name: Load Docker image into Kind
+    - name: Load Docker image into kind cluster
       run: kind load docker-image liavhackmon/rick-morty-app:latest --name rickmorty-cluster
 
-    - name: Deploy app to Kubernetes
+    - name: Deploy Kubernetes manifests
       run: |
         kubectl apply -f ./task2/yamls/Deployment.yaml
         kubectl apply -f ./task2/yamls/Service.yaml
         kubectl apply -f ./task2/yamls/Ingress.yaml
 
-    - name: Wait for Deployment to be ready
+    - name: Wait for deployment rollout
       run: kubectl rollout status deployment/rickmorty --timeout=90s
 
-    - name: Port-forward and test API
+    - name: Run API tests
       run: |
-        nohup kubectl port-forward svc/rickmorty-service 8080:80 > portforward.log 2>&1 &
         sleep 10
-        curl -f http://localhost:8080/healthcheck
-        curl -f http://localhost:8080/characters
+        curl -f http://localhost/rickmorty/healthcheck
+        curl -f http://localhost/rickmorty/characters
 
