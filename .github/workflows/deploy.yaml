@@ -32,9 +32,9 @@ jobs:
 
       - name: Deploy to Kind cluster
         run: |
-          kubectl apply -f kubernetes/Deployment.yaml
-          kubectl apply -f kubernetes/Service.yaml
-          kubectl apply -f kubernetes/Ingress.yaml
+          kubectl apply -f task2/yamls/Deployment.yaml
+          kubectl apply -f task2/yamls/Service.yaml
+          kubectl apply -f task2/yamls/Ingress.yaml
           kubectl wait --for=condition=ready pod -l app=rickmorty --timeout=120s
 
       - name: Test application endpoints
