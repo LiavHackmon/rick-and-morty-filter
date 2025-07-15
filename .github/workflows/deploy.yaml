@@ -6,9 +6,8 @@ on:
       - main
 
 jobs:
-  build-push-deploy:
-    runs-on: ubuntu-20.04
-
+  build-test-deploy:
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
@@ -30,28 +29,30 @@ jobs:
         push: true
         tags: liavhackmon/rick-morty-app:latest
 
-    - name: Set up Kubernetes cluster
-      uses: manusa/actions-setup-minikube@v2.6.0
+    - name: Set up KinD cluster
+      uses: helm/kind-action@v1.8.0
       with:
-        minikube version: 'latest'
-        kubernetes version: 'latest'
+        cluster_name: rickmorty-cluster
 
-    - name: Load Docker image into Minikube
-      run: minikube image load liavhackmon/rick-morty-app:latest
+    - name: Wait for Kubernetes API to be ready
+      run: kubectl cluster-info
 
-    - name: Deploy Kubernetes manifests
+    - name: Load Docker image into Kind
+      run: kind load docker-image liavhackmon/rick-morty-app:latest --name rickmorty-cluster
+
+    - name: Deploy app to Kubernetes
       run: |
         kubectl apply -f ./task2/yamls/Deployment.yaml
         kubectl apply -f ./task2/yamls/Service.yaml
         kubectl apply -f ./task2/yamls/Ingress.yaml
 
-    - name: Wait for deployment rollout
+    - name: Wait for Deployment to be ready
       run: kubectl rollout status deployment/rickmorty --timeout=90s
 
-    - name: Run API tests
+    - name: Port-forward and test API
       run: |
+        nohup kubectl port-forward svc/rickmorty-service 8080:80 > portforward.log 2>&1 &
         sleep 10
-        curl -f http://localhost/rickmorty/healthcheck
-        curl -f http://localhost/rickmorty/characters
-
+        curl -f http://localhost:8080/healthcheck
+        curl -f http://localhost:8080/characters
 
