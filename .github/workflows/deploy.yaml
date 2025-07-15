@@ -1,63 +1,83 @@
-name: CI/CD Rick and Morty App
-
+name: Deploy and Test Rick and Morty App
 on:
   push:
     branches:
       - main
-
 jobs:
-  build-push-deploy:
-    runs-on: ubuntu-20.04
-
+  build-and-deploy:
+    runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Docker login
-      uses: docker/login-action@v2
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    - name: Build Docker image
-      run: docker build -t liavhackmon/rick-morty-app:latest ./task2
+      - name: Build and push Docker image
+        run: |
+          docker build -t liavhackmon/rick-morty-app:latest .
+          docker push liavhackmon/rick-morty-app:latest
 
-    - name: Push Docker image
-      run: docker push liavhackmon/rick-morty-app:latest
+      - name: Set up Kind cluster
+        uses: helm/kind-action@v1.10.0
+        with:
+          version: v0.23.0
+          clusterName: rickmorty-cluster
 
-    - name: Set up kind cluster
-      uses: helm/kind-action@v1.8.0
-      with:
-        cluster_name: rickmorty-cluster
+      - name: Deploy to Kind cluster
+        run: |
+          kubectl apply -f kubernetes/Deployment.yaml
+          kubectl apply -f kubernetes/Service.yaml
+          kubectl apply -f kubernetes/Ingress.yaml
+          kubectl wait --for=condition=ready pod -l app=rickmorty --timeout=120s
 
-    - name: Pull image from Docker Hub
-      run: |
-        docker pull liavhackmon/rick-morty-app:latest
-        kind load docker-image liavhackmon/rick-morty-app:latest --name rickmorty-cluster
+      - name: Test application endpoints
+        run: |
+          kubectl port-forward svc/rickmorty-service 8081:80 &
+          sleep 5
+          curl -f http://localhost:8081/rickmorty || exit 1
+          curl -f http://localhost:8081/rickmorty/characters || exit 1
+          curl -f http://localhost:8081/rickmorty/healthcheck || exit 1
 
-    - name: Deploy to kind
-      run: |
-        kubectl apply -f ./task2/yamls/Deployment.yaml
-        kubectl apply -f ./task2/yamls/Service.yaml
-        kubectl apply -f ./task2/yamls/Ingress.yaml
-        kubectl rollout status deployment/rickmorty --timeout=90s
+      - name: Update README
+        run: |
+          cat << 'EOF' > README.md
+          # Rick and Morty API Service
 
-    - name: Debug cluster state
-      run: |
-        echo "--- Pods ---"
-        kubectl get pods -o wide
-        echo "--- Services ---"
-        kubectl get svc
-        echo "--- Ingress ---"
-        kubectl get ingress
+          This repository contains a Flask application that interacts with the Rick and Morty API to display human characters who are alive and originate from Earth. The application is deployed to a Kubernetes cluster using GitHub Actions.
 
-    - name: Port forward & Test endpoints
-      run: |
-        nohup kubectl port-forward service/rickmorty 8081:80 > portforward.log 2>&1 &
-        sleep 10
-        curl -v --fail http://localhost:8080/rickmorty/healthcheck
-        curl -v --fail http://localhost:8080/rickmorty/characters
+          ## GitHub Actions Workflow
 
+          The workflow is defined in `.github/workflows/deploy.yml` and runs on pushes to the `main` branch. It performs the following jobs and steps:
+
+          ### Job: build-and-deploy
+          - **Checkout repository**: Clones the repository using `actions/checkout@v4`.
+          - **Set up Docker Buildx**: Configures Docker Buildx for building images using `docker/setup-buildx-action@v3`.
+          - **Login to Docker Hub**: Authenticates with Docker Hub using stored secrets.
+          - **Build and push Docker image**: Builds the Docker image from `Dockerfile` and pushes it to `liavhackmon/rick-morty-app:latest`.
+          - **Set up Kind cluster**: Creates a local Kubernetes cluster using `helm/kind-action@v1.10.0`.
+          - **Deploy to Kind cluster**: Applies Kubernetes manifests (`Deployment.yaml`, `Service.yaml`, `Ingress.yaml`) and waits for the pod to be ready.
+          - **Test application endpoints**: Runs `curl` tests against the `/rickmorty`, `/rickmorty/characters`, and `/rickmorty/healthcheck` endpoints to verify functionality.
+
+          ## Running the Workflow
+          The workflow is triggered automatically on push to the `main` branch. Check the "Actions" tab in the GitHub repository to view the workflow run and its output.
+
+          ## Prerequisites
+          - Docker Hub account with credentials stored as GitHub secrets (`DOCKER_USERNAME`, `DOCKERHUB_TOKEN`).
+          - Kubernetes manifests in the `kubernetes/` directory.
+          - Application code in `app.py` and `Dockerfile`.
+
+          ## Accessing the Application
+          After deployment, the application is available at:
+          - `http://localhost:8080/rickmorty` (home page)
+          - `http://localhost:8080/rickmorty/characters` (characters page)
+          - `http://localhost:8080/rickmorty/healthcheck` (healthcheck page)
+          EOF
+
+      
